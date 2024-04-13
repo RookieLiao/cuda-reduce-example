@@ -12,10 +12,10 @@ int cpuReduction(int* idata, size_t size) {
   return cpuReduction(idata, stride);
 }
 
-int main(int args, char** argv) {
+int performCpuReduction() {
   // set up device
   int dev = 0;
-  printf("%s starting reduction at ", argv[0]);
+  printf("starting reduction at cpu");
 
   size_t elem_size = 1 << 28;
   printf("    with array size %zu    \n", elem_size);
