@@ -41,16 +41,13 @@ __global__ void reduce5(int* idata_d, int* odata_d, size_t size) {
   if (tid == 0) { odata_d[blockIdx.x] = sdata[0]; }
 }
 
-int performCudaReductionV5() {
+int performCudaReductionV5(const size_t elem_size) {
   // set up device
   int dev = 0;
   cudaDeviceProp deviceProp;
   cudaGetDeviceProperties(&deviceProp, 0);
-  printf("starting reduction at cuda_v5 ");
-  printf("device %d: %s ", dev, deviceProp.name);
+  printf("starting reduction at cuda_v5 device %d: %s\n", dev, deviceProp.name);
 
-  size_t elem_size = 1 << 28;
-  printf("    with array size %zu    \n", elem_size);
   size_t bytes = elem_size * sizeof(int);
 
   // allocate host memory

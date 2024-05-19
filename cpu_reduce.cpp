@@ -12,13 +12,11 @@ int cpuReduction(int* idata, size_t size) {
   return cpuReduction(idata, stride);
 }
 
-int performCpuReduction() {
+int performCpuReduction(const size_t elem_size) {
   // set up device
   int dev = 0;
-  printf("starting reduction at cpu");
+  printf("starting reduction at cpu\n");
 
-  size_t elem_size = 1 << 28;
-  printf("    with array size %zu    \n", elem_size);
   size_t bytes = elem_size * sizeof(int);
 
   // allocate host memory

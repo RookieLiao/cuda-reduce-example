@@ -12,13 +12,10 @@ __global__ void reduce6(int* idata_d, int* odata_d, size_t size) {
   size_t gridSize = (blockSize * 2) * gridDim.x;
 
   sdata[tid] = 0;
-  while (g_idx + blockSize < size) {
-    sdata[g_idx] += idata_d[g_idx] + idata_d[g_idx + blockSize];
+  while (g_idx < size) {
+    sdata[tid] += idata_d[g_idx] + idata_d[g_idx + blockSize];
     g_idx += gridSize;
   }
-  __syncthreads();
-
-  sdata[tid] = idata_d[g_idx] + idata_d[g_idx + blockDim.x];
   __syncthreads();
 
   if (blockSize >= 512) {
@@ -51,10 +48,8 @@ int performCudaReductionV6(const size_t elem_size) {
   int dev = 0;
   cudaDeviceProp deviceProp;
   cudaGetDeviceProperties(&deviceProp, 0);
-  printf("starting reduction at cuda_v6 ");
-  printf("device %d: %s ", dev, deviceProp.name);
+  printf("starting reduction at cuda_v6 device %d: %s\n", dev, deviceProp.name);
 
-  printf("    with array size %zu    \n", elem_size);
   size_t bytes = elem_size * sizeof(int);
 
   // allocate host memory
@@ -74,7 +69,7 @@ int performCudaReductionV6(const size_t elem_size) {
   constexpr size_t block_size = 128;
 
   dim3 block(block_size);
-  dim3 grid0(128);
+  dim3 grid0(1024);
 
   // allocate device memory
   int* idata_d = NULL;
@@ -107,6 +102,5 @@ int performCudaReductionV6(const size_t elem_size) {
   // check results
   bool bResult = (gpu_sum == cpu_sum);
   if (!bResult) printf("Test failed!\n");
-  printf("cpu sum: %d, gpu sum: %d", cpu_sum, gpu_sum);
   return EXIT_SUCCESS;
 }
