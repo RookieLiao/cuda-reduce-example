@@ -72,7 +72,7 @@ int performCudaReductionV2() {
   iStart = seconds();
 
   size_t smem_size = block_size * sizeof(int);
-  reduce2<<<grid0, block, smem_size >>>(idata_d, odata_d0, elem_size);
+  reduce2<<<grid0, block, smem_size>>>(idata_d, odata_d0, elem_size);
   reduce2<<<grid1, block, smem_size>>>(odata_d0, odata_d1, grid0.x);
   reduce2<<<grid2, block, smem_size>>>(odata_d1, odata_d2, grid1.x);
 
