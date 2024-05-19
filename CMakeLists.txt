@@ -10,7 +10,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Define a shared library
-add_library(reduce_impl SHARED cpu_reduce.cpp cuda_reduce_v0.cu)
+file(GLOB CUDA_SOURCES "cuda_reduce/*.cu")
+add_library(reduce_impl SHARED cpu_reduce.cpp ${CUDA_SOURCES})
 
 enable_language(CUDA)
 include_directories(${CUDA_INCLUDE_DIRS})
@@ -23,3 +24,6 @@ set_target_properties(reduce_impl PROPERTIES
     CUDA_SEPARABLE_COMPILATION ON
     CUDA_ARCHITECTURES "86"  # Adjust according to your GPU
 )
+
+# Add CUDA SM architecture
+set_property(TARGET reduce_impl PROPERTY CUDA_ARCHITECTURES "80;86")  # Replace with desired SM versions

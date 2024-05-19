@@ -1,29 +1,33 @@
 #include <stdio.h>
-#include "utils.h"
+#include "../utils.h"
 
 extern int cpuReduction(int* idata, size_t size);
 
-__global__ void reduce0(int* idata_d, int* odata_d, size_t size) {
+// interleaved addressing with bank conflicts
+__global__ void reduce1(int* idata_d, int* odata_d, size_t size) {
+  extern __shared__ int sdata[];
   size_t tid = threadIdx.x;
   size_t g_idx = blockDim.x * blockIdx.x + tid;
 
   // if out of boundary, just return
   if (g_idx >= size) { return; }
-  int* idata_b = idata_d + blockDim.x * blockIdx.x;
+  sdata[tid] = idata_d[g_idx];
+  __syncthreads();
 
   for (size_t stride = 1; stride < blockDim.x; stride <<= 1) {
-    if (tid % (stride * 2) == 0) { idata_b[tid] += idata_b[tid + stride]; }
+    int index = tid * (stride * 2);
+    if (index < blockDim.x) { sdata[index] += sdata[index + stride]; }
     __syncthreads();
   }
-  if (tid == 0) { odata_d[blockIdx.x] = idata_b[0]; }
+  if (tid == 0) { odata_d[blockIdx.x] = sdata[0]; }
 }
 
-int performCudaReductionV0() {
+int performCudaReductionV1() {
   // set up device
   int dev = 0;
   cudaDeviceProp deviceProp;
   cudaGetDeviceProperties(&deviceProp, 0);
-  printf("starting reduction at cuda_v0 ");
+  printf("starting reduction at cuda_v1 ");
   printf("device %d: %s ", dev, deviceProp.name);
 
   size_t elem_size = 1 << 28;
@@ -68,15 +72,15 @@ int performCudaReductionV0() {
   cudaDeviceSynchronize();
   iStart = seconds();
 
-  reduce0<<<grid0, block>>>(idata_d, odata_d0, elem_size);
-  reduce0<<<grid1, block>>>(odata_d0, odata_d1, grid0.x);
-  reduce0<<<grid2, block>>>(odata_d1, odata_d2, grid1.x);
+  reduce1<<<grid0, block>>>(idata_d, odata_d0, elem_size);
+  reduce1<<<grid1, block>>>(odata_d0, odata_d1, grid0.x);
+  reduce1<<<grid2, block>>>(odata_d1, odata_d2, grid1.x);
 
   cudaMemcpy(odata_h, odata_d2, grid2.x * sizeof(int), cudaMemcpyDeviceToHost);
   int gpu_sum = cpuReduction(odata_h, grid2.x);
   iElaps = seconds() - iStart;
   float gpu_bw = bytes / iElaps / 1e9;
-  printf("reduction_v0 elapsed %lf ms, bandwidth %lf GB/s", iElaps * 1e3, gpu_bw);
+  printf("reduction_v1 elapsed %lf ms, bandwidth %lf GB/s", iElaps * 1e3, gpu_bw);
 
   free(idata_h);
   free(temp);
