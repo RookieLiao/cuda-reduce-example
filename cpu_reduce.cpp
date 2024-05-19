@@ -12,13 +12,11 @@ int cpuReduction(int* idata, size_t size) {
   return cpuReduction(idata, stride);
 }
 
-int main(int args, char** argv) {
+int performCpuReduction(const size_t elem_size) {
   // set up device
   int dev = 0;
-  printf("%s starting reduction at ", argv[0]);
+  printf("starting reduction at cpu\n");
 
-  size_t elem_size = 1 << 28;
-  printf("    with array size %zu    \n", elem_size);
   size_t bytes = elem_size * sizeof(int);
 
   // allocate host memory
@@ -39,7 +37,5 @@ int main(int args, char** argv) {
   printf("cpu reduce elapsed %lf ms, bandwidth %lf GB/s, cpu_sum: %d\n", iElaps * 1e3, cpu_bw,
          cpu_sum);
 
-  // check results
-  printf("cpu reduction result: %d\n", cpu_sum);
   return EXIT_SUCCESS;
 }
