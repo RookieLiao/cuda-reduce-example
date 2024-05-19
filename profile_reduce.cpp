@@ -18,5 +18,5 @@ int main(int args, char** argv) {
   // performCudaReductionV3();
   // performCudaReductionV4();
   // performCudaReductionV5();
-performCudaReductionV6(array_size);
+  performCudaReductionV6(array_size);
 }

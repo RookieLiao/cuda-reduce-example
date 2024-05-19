@@ -13,7 +13,7 @@ __global__ void reduce6(int* idata_d, int* odata_d, size_t size) {
 
   sdata[tid] = 0;
   while (g_idx + blockSize < size) {
-    sdata[g_idx] += idata_d[g_idx] + idata_d[g_idx+blockSize];
+    sdata[g_idx] += idata_d[g_idx] + idata_d[g_idx + blockSize];
     g_idx += gridSize;
   }
   __syncthreads();
@@ -22,39 +22,28 @@ __global__ void reduce6(int* idata_d, int* odata_d, size_t size) {
   __syncthreads();
 
   if (blockSize >= 512) {
-    if (tid < 256) {
-      sdata[tid] += sdata[tid + 256];
-    }
+    if (tid < 256) { sdata[tid] += sdata[tid + 256]; }
     __syncthreads();
   }
 
   if (blockSize >= 256) {
-    if (tid < 128) {
-      sdata[tid] += sdata[tid + 128];
-    }
+    if (tid < 128) { sdata[tid] += sdata[tid + 128]; }
     __syncthreads();
   }
 
   if (blockSize >= 128) {
-    if (tid < 64) {
-      sdata[tid] += sdata[tid + 64];
-    }
+    if (tid < 64) { sdata[tid] += sdata[tid + 64]; }
     __syncthreads();
   }
 
   // unroll last warp
   if (tid < 32) {
-    volatile int *temp = static_cast<volatile int *>(sdata);
+    volatile int* temp = static_cast<volatile int*>(sdata);
 #pragma unroll
-    for (size_t stride = 32; stride > 0; stride >>= 1) {
-      temp[tid] += temp[tid + stride];
-    }
+    for (size_t stride = 32; stride > 0; stride >>= 1) { temp[tid] += temp[tid + stride]; }
   }
 
-  if (tid == 0) {
-    odata_d[blockIdx.x] = sdata[0];
-  }
-
+  if (tid == 0) { odata_d[blockIdx.x] = sdata[0]; }
 }
 
 int performCudaReductionV6(const size_t elem_size) {
