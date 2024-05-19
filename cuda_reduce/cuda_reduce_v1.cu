@@ -72,15 +72,16 @@ int performCudaReductionV1() {
   cudaDeviceSynchronize();
   iStart = seconds();
 
-  reduce1<<<grid0, block>>>(idata_d, odata_d0, elem_size);
-  reduce1<<<grid1, block>>>(odata_d0, odata_d1, grid0.x);
-  reduce1<<<grid2, block>>>(odata_d1, odata_d2, grid1.x);
+  size_t smem_size = block_size * sizeof(int);
+  reduce1<<<grid0, block, smem_size>>>(idata_d, odata_d0, elem_size);
+  reduce1<<<grid1, block, smem_size>>>(odata_d0, odata_d1, grid0.x);
+  reduce1<<<grid2, block, smem_size>>>(odata_d1, odata_d2, grid1.x);
 
   cudaMemcpy(odata_h, odata_d2, grid2.x * sizeof(int), cudaMemcpyDeviceToHost);
   int gpu_sum = cpuReduction(odata_h, grid2.x);
   iElaps = seconds() - iStart;
   float gpu_bw = bytes / iElaps / 1e9;
-  printf("reduction_v1 elapsed %lf ms, bandwidth %lf GB/s", iElaps * 1e3, gpu_bw);
+  printf("reduction_v1 elapsed %lf ms, bandwidth %lf GB/s\n", iElaps * 1e3, gpu_bw);
 
   free(idata_h);
   free(temp);

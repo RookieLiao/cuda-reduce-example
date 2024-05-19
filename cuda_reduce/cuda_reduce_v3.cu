@@ -3,30 +3,38 @@
 
 extern int cpuReduction(int* idata, size_t size);
 
-// sequential addressing
-__global__ void reduce2(int* idata_d, int* odata_d, size_t size) {
+// two loads and first add
+__global__ void reduce3(int *idata_d, int *odata_d, size_t size) {
   extern __shared__ int sdata[];
   size_t tid = threadIdx.x;
-  size_t g_idx = blockDim.x * blockIdx.x + tid;
+  size_t g_idx = (2 * blockDim.x) * blockIdx.x + tid;
 
   // if out of boundary, just return
-  if (g_idx >= size) { return; }
-  sdata[tid] = idata_d[g_idx];
+  if (g_idx + blockDim.x >= size) {
+    return;
+  }
+
+  sdata[tid] = idata_d[g_idx] + idata_d[g_idx + blockDim.x];
   __syncthreads();
 
   for (size_t stride = blockDim.x / 2; stride >= 1; stride >>= 1) {
-    if (tid < stride) { sdata[tid] += sdata[tid + stride]; }
+    if (tid < stride) {
+      sdata[tid] += sdata[tid + stride];
+    }
     __syncthreads();
   }
-  if (tid == 0) { odata_d[blockIdx.x] = sdata[0]; }
+  if (tid == 0) {
+    odata_d[blockIdx.x] = sdata[0];
+  }
 }
 
-int performCudaReductionV2() {
+
+int performCudaReductionV3() {
   // set up device
   int dev = 0;
   cudaDeviceProp deviceProp;
   cudaGetDeviceProperties(&deviceProp, 0);
-  printf("starting reduction at cuda_v2 ");
+  printf("starting reduction at cuda_v3 ");
   printf("device %d: %s ", dev, deviceProp.name);
 
   size_t elem_size = 1 << 28;
@@ -50,9 +58,9 @@ int performCudaReductionV2() {
   size_t block_size = 128;
 
   dim3 block(block_size);
-  dim3 grid0(((elem_size - 1) / block_size + 1));
-  dim3 grid1((grid0.x - 1) / block_size + 1);
-  dim3 grid2((grid1.x - 1) / block_size + 1);
+  dim3 grid0(((elem_size - 1) / (2*block_size) + 1));
+  dim3 grid1((grid0.x - 1) / (2*block_size) + 1);
+  dim3 grid2((grid1.x - 1) / (2*block_size) + 1);
 
   // allocate device memory
   int* idata_d = NULL;
@@ -72,15 +80,15 @@ int performCudaReductionV2() {
   iStart = seconds();
 
   size_t smem_size = block_size * sizeof(int);
-  reduce2<<<grid0, block, smem_size >>>(idata_d, odata_d0, elem_size);
-  reduce2<<<grid1, block, smem_size>>>(odata_d0, odata_d1, grid0.x);
-  reduce2<<<grid2, block, smem_size>>>(odata_d1, odata_d2, grid1.x);
+  reduce3<<<grid0, block, smem_size>>>(idata_d, odata_d0, elem_size);
+  reduce3<<<grid1, block, smem_size>>>(odata_d0, odata_d1, grid0.x);
+  reduce3<<<grid2, block, smem_size>>>(odata_d1, odata_d2, grid1.x);
 
   cudaMemcpy(odata_h, odata_d2, grid2.x * sizeof(int), cudaMemcpyDeviceToHost);
   int gpu_sum = cpuReduction(odata_h, grid2.x);
   iElaps = seconds() - iStart;
   float gpu_bw = bytes / iElaps / 1e9;
-  printf("reduction_v2 elapsed %lf ms, bandwidth %lf GB/s\n", iElaps * 1e3, gpu_bw);
+  printf("reduction_v3 elapsed %lf ms, bandwidth %lf GB/s\n", iElaps * 1e3, gpu_bw);
 
   free(idata_h);
   free(temp);
