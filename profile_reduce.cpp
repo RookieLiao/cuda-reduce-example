@@ -10,7 +10,7 @@ extern int performCudaReductionV5(const size_t);
 extern int performCudaReductionV6(const size_t);
 
 int main(int args, char** argv) {
-  size_t array_size = 1 << 28;
+  size_t array_size = 1ULL << 28;
   printf("start profiling reduction with array size %zu    \n", array_size);
   performCpuReduction(array_size);
   performCudaReductionV0(array_size);
