@@ -39,7 +39,5 @@ int performCpuReduction() {
   printf("cpu reduce elapsed %lf ms, bandwidth %lf GB/s, cpu_sum: %d\n", iElaps * 1e3, cpu_bw,
          cpu_sum);
 
-  // check results
-  printf("cpu reduction result: %d\n", cpu_sum);
   return EXIT_SUCCESS;
 }

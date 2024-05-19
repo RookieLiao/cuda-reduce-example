@@ -23,7 +23,7 @@ int performCudaReductionV0() {
   int dev = 0;
   cudaDeviceProp deviceProp;
   cudaGetDeviceProperties(&deviceProp, 0);
-  printf("starting reduction at cuda_v0\n");
+  printf("starting reduction at cuda_v0 ");
   printf("device %d: %s ", dev, deviceProp.name);
 
   size_t elem_size = 1 << 28;
@@ -76,8 +76,7 @@ int performCudaReductionV0() {
   int gpu_sum = cpuReduction(odata_h, grid2.x);
   iElaps = seconds() - iStart;
   float gpu_bw = bytes / iElaps / 1e9;
-  printf("reduction_v0 elapsed %lf ms, bandwidth %lf GB/s, gpu_sum: %d\n", iElaps * 1e3, gpu_bw,
-         gpu_sum);
+  printf("reduction_v0 elapsed %lf ms, bandwidth %lf GB/s", iElaps * 1e3, gpu_bw);
 
   free(idata_h);
   free(temp);
